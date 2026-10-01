@@ -106,15 +106,9 @@ def test_render_real_gym_frame(client, env, state):
 
 
 def test_render_without_pygame_returns_501(client, monkeypatch):
-    import builtins
-    real_import = builtins.__import__
-
-    def fake_import(name, *args, **kwargs):
-        if name == "pygame":
-            raise ImportError("no pygame")
-        return real_import(name, *args, **kwargs)
-
-    monkeypatch.setattr(builtins, "__import__", fake_import)
+    import importlib.util
+    real_find_spec = importlib.util.find_spec
+    monkeypatch.setattr(importlib.util, "find_spec", lambda name, *a: None if name == "pygame" else real_find_spec(name, *a))
     assert client.post("/api/render", json={**DET_LAKE, "state": 0}).status_code == 501
 
 
@@ -124,3 +118,28 @@ def test_default_episode_step_limit_is_1000(client):
     ok = client.post("/api/infer", json={**DET_LAKE, "policy": [0] * 16, "start_state": 0, "max_steps": 5000})
     assert ok.status_code == 200 and ok.json()["length"] == 5000  # Left forever on 4x4 = truncated at the limit
     assert client.post("/api/infer", json={**DET_LAKE, "policy": [0] * 16, "max_steps": 5001}).status_code == 422
+
+
+def test_concurrent_real_renders_do_not_crash_the_server(client):
+    """pygame/SDL is not thread-safe: overlapping /api/render calls used to segfault the server."""
+    pytest.importorskip("pygame")
+    from concurrent.futures import ThreadPoolExecutor
+
+    def render(i):
+        env = ["FrozenLake", "CliffWalking", "Taxi"][i % 3]
+        state = 328 if env == "Taxi" else 0
+        return client.post("/api/render", json={"env_key": env, "state": state, "last_action": i % 4}).status_code
+
+    with ThreadPoolExecutor(8) as pool:
+        codes = list(pool.map(render, range(24)))
+    assert codes == [200] * 24
+    assert client.get("/api/health").status_code == 200
+
+
+def test_render_worker_crash_is_recovered(client, monkeypatch):
+    pytest.importorskip("pygame")
+    import backend.rl.render as render_mod
+    render_mod.kill_worker_for_tests()  # simulate a native crash in the render process
+    res = client.post("/api/render", json={"env_key": "Taxi", "state": 328})
+    assert res.status_code in (200, 503)
+    assert client.post("/api/render", json={"env_key": "Taxi", "state": 328}).status_code == 200

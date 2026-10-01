@@ -32,7 +32,7 @@ from .rl.environments import (
 )
 from .rl.inference import MAX_BENCHMARK_EPISODES, benchmark_policies, episode_to_dict, run_episode
 from .rl.policy_iteration import PIConfig, initial_policy, policy_iteration, policy_iteration_step
-from .rl.render import RenderUnavailable, render_frame
+from .rl.render import RenderCrashed, RenderUnavailable, render_frame
 from .rl.serialize import env_header, iteration_to_dict
 
 logger = logging.getLogger("pi_lab")
@@ -259,6 +259,8 @@ def render(req: RenderRequest) -> dict[str, Any]:
         return {"image": render_frame(req.env_key, options, req.state, req.last_action)}
     except RenderUnavailable as exc:
         raise HTTPException(status_code=501, detail=str(exc)) from exc
+    except RenderCrashed as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
 # Local dev: serve the frontend from the same origin (on Vercel the CDN serves it).
