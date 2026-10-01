@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Policy Iteration Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">π</span>
+      <div>
+        <div class="brand-title">Policy Iteration Lab</div>
+        <div class="brand-sub">Gymnasium · custom policy iteration · inference engine</div>
+      </div>
+    </div>
+    <nav class="env-tabs" id="env-tabs" aria-label="Environment"></nav>
+    <div class="status" id="status" role="status" aria-live="polite"></div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <section class="card" id="train-card"></section>
+      <section class="card">
+        <div class="card-head"><h2>Saved runs</h2>
+          <div class="btn-row">
+            <label class="btn ghost sm file-btn" title="Import a run JSON">⤒ Import<input type="file" id="import-run" accept="application/json,.json" /></label>
+            <button class="btn ghost sm" id="refresh-runs" title="Refresh">↻</button>
+          </div></div>
+        <div id="run-list" class="run-list"></div>
+      </section>
+    </aside>
+
+    <main class="main">
+      <section id="empty-state" class="empty">
+        <div class="empty-copy">
+          <h1 id="empty-title">Train a policy</h1>
+          <p id="empty-desc"></p>
+          <ol>
+            <li>Set the environment and policy-iteration parameters on the left.</li>
+            <li>Press <b>Start training</b>. Each policy π<sub>k</sub> streams in with its V<sup>π</sup> and Q<sup>π</sup>.</li>
+            <li>Scrub through the policies, then run inference with any π<sub>k</sub> or with the optimal π★ from any start state.</li>
+          </ol>
+          <div class="primer" id="primer"></div>
+        </div>
+        <div class="preview-wrap"><canvas id="preview-canvas"></canvas><div class="caption">Environment preview</div></div>
+      </section>
+
+      <section id="run-view" hidden>
+        <div id="run-header" class="run-header"></div>
+        <details class="explainer env-note" id="env-note"><summary>ⓘ About this environment and policy iteration</summary><div class="explainer-body" id="env-note-body"></div></details>
+        <nav class="view-tabs" id="view-tabs" role="tablist">
+          <button data-view="training" class="active">Training replay</button>
+          <button data-view="values">Value functions</button>
+          <button data-view="policy">Policy table</button>
+          <button data-view="inference">Inference</button>
+          <button data-view="benchmark">Benchmark</button>
+        </nav>
+        <div data-panel="training" class="panel"></div>
+        <div data-panel="values" class="panel" hidden></div>
+        <div data-panel="policy" class="panel" hidden></div>
+        <div data-panel="inference" class="panel" hidden></div>
+        <div data-panel="benchmark" class="panel" hidden></div>
+      </section>
+    </main>
+  </div>
+
+  <div id="tooltip" class="tooltip" hidden></div>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
