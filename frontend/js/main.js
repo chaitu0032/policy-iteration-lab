@@ -3,7 +3,9 @@
 import { api } from "./api.js";
 import { createStore } from "./store.js";
 import { createTrainer } from "./trainer.js";
-import { downloadJson, runsDb, validateImportedRun } from "./runsDb.js";
+import { downloadJson, validateImportedRun } from "./runsDb.js";
+import { browserRunCount, migrateBrowserRuns, runs, setStorageMode, storageMode } from "./runsRepo.js";
+import { createLogin } from "./components/login.js";
 import { decodeTaxi } from "./taxi.js";
 import { createWorld, ensureSprites } from "./world/index.js";
 import { createTrainForm } from "./components/trainForm.js";
@@ -46,7 +48,7 @@ const ui = { status };
 
 async function refreshRuns() {
   try {
-    store.set({ runs: await runsDb.list() });
+    store.set({ runs: await runs.list() });
   } catch (err) {
     status(`Could not read saved runs: ${err.message}`, "error");
   }
@@ -70,13 +72,15 @@ async function openRun(id) {
     status("Stop the running training before opening another run.", "error");
     return;
   }
-  const run = await runsDb.get(id);
+  const run = await runs.get(id);
   if (!run) {
     status("Run not found (it may have been deleted).", "error");
     await refreshRuns();
     return;
   }
   if (run.env.key !== store.get().envKey) selectEnv(run.env.key, false);
+  const env = store.get().envs.find((e) => e.key === run.env.key);
+  trainForm.setEnv(env, { env: run.env.options, pi: run.config });
   setRun(run);
 }
 
@@ -102,7 +106,7 @@ const trainer = createTrainer({
     store.set({ job: null, run, trainWarnings: snap.warnings });
     setRun(run);
     try {
-      await runsDb.save(run);
+      await runs.save(run);
     } catch (err) {
       status(`Training finished but the run could not be saved: ${err.message}`, "error");
     }
@@ -112,7 +116,9 @@ const trainer = createTrainer({
   },
   onError(err) {
     trainForm.setJob(null);
-    store.set({ job: null });
+    // A run with no evaluated policy is useless: drop it so the page doesn't sit on "Waiting for π₀".
+    const run = store.get().run;
+    store.set({ job: null, ...(run && !run.iterations.length ? { run: null } : {}) });
     status(`Training failed: ${err.message}`, "error");
   },
 });
@@ -133,7 +139,11 @@ const trainForm = createTrainForm($("#train-card"), {
   onResume: () => trainer.resume(),
   onStop: () => { trainer.stop(); status("Stopping after the current step…"); },
   onLiveChange: (live) => trainer.setDelay(live.delay_ms),
-  onOptionsChange: (options) => schedulePreview(options),
+  onOptionsChange: (options) => {
+    // The open run no longer matches the form: show the new configuration (the run stays in Saved runs).
+    if (store.get().run && !trainer.isRunning()) store.set({ run: null });
+    schedulePreview(options);
+  },
   onError: (msg) => status(msg, "error"),
 });
 
@@ -165,17 +175,20 @@ function selectEnv(key, clearRun = true) {
 }
 
 let previewTimer = null;
+let previewToken = 0;
 function schedulePreview(options) {
   clearTimeout(previewTimer);
+  const token = ++previewToken;
   previewTimer = setTimeout(async () => {
     try {
       const [{ env, layout }] = await Promise.all([api.layout(store.get().envKey, options), ensureSprites()]);
+      if (token !== previewToken) return; // a newer env/option change superseded this preview
       const world = createWorld($("#preview-canvas"), { env, layout });
       world.resize(460, 420);
       const start = layout.default_start;
       world.draw({ agent: { from: start, to: start, t: 1 } });
     } catch (err) {
-      status(err.message, "error");
+      if (token === previewToken) status(err.message, "error");
     }
   }, PREVIEW_DEBOUNCE_MS);
 }
@@ -253,9 +266,9 @@ store.subscribe((s, changed) => {
     renderRunList($("#run-list"), {
       runs: s.runs, envKey: s.envKey, activeId: s.run?.id,
       onOpen: openRun,
-      onExport: async (id) => { const run = await runsDb.get(id); if (run) downloadJson(`pi-${run.env.key}-${id}.json`, run); },
+      onExport: async (id) => { const run = await runs.get(id); if (run) downloadJson(`pi-${run.env.key}-${id}.json`, run); },
       onDelete: async (id) => {
-        await runsDb.remove(id);
+        await runs.remove(id);
         if (store.get().run?.id === id) store.set({ run: null });
         await refreshRuns();
         status("Run deleted.");
@@ -267,7 +280,13 @@ store.subscribe((s, changed) => {
     views.training.stop();
   }
   lastView = s.view;
-  renderMain(s);
+  try {
+    renderMain(s);
+  } catch (err) {
+    // A drawing bug must never abort training or playback; surface it instead.
+    console.error("[render]", err);
+    status(`Display error: ${err.message}`, "error");
+  }
 });
 
 // ---------------------------------------------------------------- DOM events
@@ -287,7 +306,7 @@ $("#import-run").addEventListener("change", async (e) => {
   if (!file) return;
   try {
     const run = validateImportedRun(JSON.parse(await file.text()));
-    await runsDb.save(run);
+    await runs.save(run);
     await refreshRuns();
     await openRun(run.id);
     status("Run imported.", "ok");
@@ -303,6 +322,64 @@ window.addEventListener("resize", () => {
 
 // ---------------------------------------------------------------- boot
 
+// ---------------------------------------------------------------- accounts + boot
+
+const login = createLogin($("#login"));
+let sessionInfo = { auth: false, user: "local", storage: "browser" };
+
+function showAccount() {
+  $("#account").hidden = !sessionInfo.auth;
+  $("#account-name").textContent = sessionInfo.user || "";
+}
+
+async function offerMigration() {
+  const box = $("#migrate");
+  const n = storageMode() === "server" ? await browserRunCount() : 0;
+  box.hidden = n === 0;
+  if (!n) return;
+  box.innerHTML = `<span>${n} run${n === 1 ? " is" : "s are"} saved only in this browser.</span>
+    <button class="btn sm" type="button" id="migrate-btn">Move to my account</button>`;
+  $("#migrate-btn").addEventListener("click", async () => {
+    try {
+      const moved = await migrateBrowserRuns((i, total) => status(`Moving runs… ${i}/${total}`));
+      status(`Moved ${moved} run${moved === 1 ? "" : "s"} to your account.`, "ok");
+      box.hidden = true;
+      await refreshRuns();
+    } catch (err) {
+      status(`Could not move runs: ${err.message}`, "error");
+    }
+  });
+}
+
+async function ensureSignedIn() {
+  sessionInfo = await api.session();
+  if (sessionInfo.auth && !sessionInfo.user) {
+    sessionInfo = { ...sessionInfo, user: await login.prompt() };
+  }
+  setStorageMode(sessionInfo.storage);
+  showAccount();
+}
+
+$("#logout").addEventListener("click", async () => {
+  if (trainer.isRunning()) trainer.stop();
+  try {
+    await api.logout();
+  } finally {
+    location.reload();
+  }
+});
+
+let reauthing = false;
+window.addEventListener("pi:auth-required", async () => {
+  if (reauthing || !sessionInfo.auth) return;
+  reauthing = true;
+  status("Your session ended. Sign in again to continue.", "error");
+  sessionInfo = { ...sessionInfo, user: await login.prompt() };
+  showAccount();
+  reauthing = false;
+  status("Signed in again.", "ok");
+});
+
 async function boot() {
   // KaTeX loads with `defer`; typeset static explainers once it is ready.
   window.addEventListener("load", () => {
@@ -310,10 +387,12 @@ async function boot() {
     typesetExplainers(document);
   });
   try {
+    await ensureSignedIn();
     const envs = await api.envs();
     store.set({ envs });
     selectEnv(store.get().envKey);
     await refreshRuns();
+    await offerMigration();
   } catch (err) {
     status(err.message, "error");
   }

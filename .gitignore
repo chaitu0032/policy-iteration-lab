@@ -6,3 +6,7 @@ htmlcov/
 .venv/
 .vercel/
 .DS_Store
+.env.local
+.env*.local
+credentials.local.txt
+data/

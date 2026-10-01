@@ -295,3 +295,20 @@ textarea.map-input:focus { outline: 1px solid var(--accent); }
 .gym-frame canvas, .gym-frame img { display: block; image-rendering: pixelated; max-width: 100%; }
 .gym-caption { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--muted); }
 @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+
+/* ---------- accounts ---------- */
+.account { display: flex; align-items: center; gap: 8px; margin-left: 12px; }
+.account .who { font-size: 13px; color: var(--text); padding: 4px 10px; border: 1px solid var(--line-2); border-radius: 999px; }
+.login-screen { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; padding: 16px;
+  background: radial-gradient(circle at 50% 30%, var(--panel-2), var(--bg) 70%); }
+.login-card { width: min(380px, 100%); display: flex; flex-direction: column; gap: 8px; padding: 28px;
+  background: var(--panel); border: 1px solid var(--line-2); border-radius: var(--radius); box-shadow: var(--shadow); }
+.login-card img { image-rendering: pixelated; align-self: center; }
+.login-card h1 { font-size: 20px; text-align: center; }
+.login-card p { margin: 0 0 8px; text-align: center; font-size: 13px; }
+.login-card label { font-size: 13px; color: var(--muted); margin-top: 6px; }
+.login-card input { padding: 9px 10px; font-size: 15px; }
+.login-card .btn { margin-top: 10px; padding: 10px; font-size: 15px; }
+.login-error { min-height: 1.2em; color: var(--bad) !important; font-size: 13px; text-align: left !important; margin: 4px 0 0 !important; }
+.pixel { image-rendering: pixelated; }
+#migrate { margin-bottom: 8px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }

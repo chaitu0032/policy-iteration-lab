@@ -1,0 +1,6 @@
+.env*
+credentials.local.txt
+data/
+e2e/
+tests/
+.pytest_cache/

@@ -20,6 +20,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+from . import accounts
 from .rl.environments import (
     SPECS,
     TabularModel,
@@ -41,7 +42,11 @@ MAX_STEPS_LIMIT = 5000
 EVAL_TIME_BUDGET_S = 8.0  # keep each request well inside serverless time limits
 MODEL_CACHE_SIZE = 16
 
-app = FastAPI(title="Policy Iteration Lab", version="2.0.0")
+app = FastAPI(title="Policy Iteration Lab", version="2.0.0", docs_url=None, redoc_url=None, openapi_url=None)
+
+
+# Auth + CSRF middleware and /api/session, /api/auth/*, /api/runs* (per-user storage).
+accounts.install(app, accounts.build_security())
 
 
 @app.middleware("http")

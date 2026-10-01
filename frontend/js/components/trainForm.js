@@ -99,8 +99,8 @@ export function createTrainForm(root, { onStart, onPause, onResume, onStop, onOp
     return group === "pi" ? PI_FIELDS : LIVE_FIELDS;
   }
 
-  function initialValues(group) {
-    const prev = saved[env.key]?.[group] || {};
+  function initialValues(group, override = {}) {
+    const prev = { ...(saved[env.key]?.[group] || {}), ...override };
     return Object.fromEntries(fieldsFor(group).map((f) => [f.name, prev[f.name] ?? f.default]));
   }
 
@@ -178,9 +178,14 @@ export function createTrainForm(root, { onStart, onPause, onResume, onStop, onOp
     return Object.fromEntries(visibleFields("env").map((f) => [f.name, values.env[f.name]]));
   }
 
-  function setEnv(nextEnv) {
+  /** Show ``nextEnv``'s form; ``overrides`` (e.g. a saved run's options/config) win over remembered values. */
+  function setEnv(nextEnv, overrides = {}) {
     env = nextEnv;
-    values = { env: initialValues("env"), pi: initialValues("pi"), live: initialValues("live") };
+    values = {
+      env: initialValues("env", overrides.env),
+      pi: initialValues("pi", overrides.pi),
+      live: initialValues("live"),
+    };
     render();
   }
 

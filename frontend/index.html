@@ -23,7 +23,12 @@
     </div>
     <nav class="env-tabs" id="env-tabs" aria-label="Environment"></nav>
     <div class="status" id="status" role="status" aria-live="polite"></div>
+    <div class="account" id="account" hidden>
+      <span class="who" id="account-name"></span>
+      <button class="btn sm" id="logout" type="button">Sign out</button>
+    </div>
   </header>
+  <div class="login-screen" id="login" hidden></div>
 
   <div class="layout">
     <aside class="sidebar">
@@ -34,6 +39,7 @@
             <label class="btn ghost sm file-btn" title="Import a run JSON">⤒ Import<input type="file" id="import-run" accept="application/json,.json" /></label>
             <button class="btn ghost sm" id="refresh-runs" title="Refresh">↻</button>
           </div></div>
+        <div id="migrate" class="note" hidden></div>
         <div id="run-list" class="run-list"></div>
       </section>
     </aside>

@@ -9,15 +9,18 @@ function el(tag, attrs = {}, parent) {
   return node;
 }
 
+const MAX_TICKS = 12;
+
 function niceTicks(lo, hi, count = 4) {
-  if (lo === hi) return [lo];
+  if (!(hi > lo)) return [lo];
   const step = 10 ** Math.floor(Math.log10((hi - lo) / count));
   const err = ((hi - lo) / count) / step;
   const mult = err >= 7.5 ? 10 : err >= 3.5 ? 5 : err >= 1.5 ? 2 : 1;
   const s = step * mult;
-  const ticks = [];
-  for (let t = Math.ceil(lo / s) * s; t <= hi + 1e-12; t += s) ticks.push(+t.toPrecision(12));
-  return ticks;
+  // Generate by index (never `t += s`): when s is below the float precision of t the sum stops changing.
+  const first = Math.ceil(lo / s);
+  const n = Math.min(MAX_TICKS, Math.floor(hi / s) - first + 1);
+  return Array.from({ length: Math.max(0, n) }, (_, k) => +((first + k) * s).toPrecision(12));
 }
 
 function fmt(v, step = null) {
@@ -49,7 +52,12 @@ export function renderChart(container, opts) {
   let lo = opts.yMin != null ? tf(opts.yMin) : Math.min(...all);
   let hi = opts.yMax != null ? tf(opts.yMax) : Math.max(...all);
   if (series.some((s) => s.type === "bar") && !log) lo = Math.min(lo, 0);
-  if (lo === hi) { lo -= 1; hi += 1; }
+  // A range that is flat up to float noise (e.g. every V(s0) = -100) is drawn as flat.
+  if (!Number.isFinite(lo) || !Number.isFinite(hi)) { lo = 0; hi = 1; }
+  if (hi - lo <= 1e-9 * Math.max(1, Math.abs(hi), Math.abs(lo))) {
+    const pad = Math.max(1, Math.abs(hi) * 0.05);
+    lo -= pad; hi += pad;
+  }
   const padY = (hi - lo) * 0.08;
   lo -= padY; hi += padY;
 
@@ -61,7 +69,7 @@ export function renderChart(container, opts) {
 
   const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img" }, container);
   const ticks = log
-    ? Array.from({ length: Math.floor(hi) - Math.ceil(lo) + 1 }, (_, k) => 10 ** (Math.ceil(lo) + k))
+    ? Array.from({ length: Math.max(1, Math.min(MAX_TICKS, Math.floor(hi) - Math.ceil(lo) + 1)) }, (_, k) => 10 ** (Math.ceil(lo) + k))
     : niceTicks(lo, hi);
   const thin = Math.max(1, Math.ceil(ticks.length / 6));
   const tickStep = !log && ticks.length > 1 ? Math.abs(ticks[1] - ticks[0]) : null;

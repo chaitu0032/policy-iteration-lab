@@ -9,7 +9,7 @@ DET_LAKE = {"env_key": "FrozenLake", "options": {"map_name": "4x4", "is_slippery
 
 @pytest.fixture(scope="module")
 def client():
-    return TestClient(app)
+    return TestClient(app, headers={"X-Requested-With": "pi-lab"})
 
 
 def _drive_steps(client, env, config, max_steps=100):

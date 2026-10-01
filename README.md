@@ -55,14 +55,42 @@ The backend is **stateless**. The browser runs policy iteration one `/api/pi/ste
 ```bash
 pip install -r requirements-dev.txt
 ./run.sh                  # frees port 8765 if needed, then serves http://localhost:8765
-pytest --cov=backend      # 52 tests
+pytest --cov=backend      # unit + API tests
+python3 -m pytest e2e     # browser stress tests (Playwright, starts its own servers)
 ```
+
+## Accounts, sessions and storage
+
+- **Accounts:** `python3 scripts/create_users.py` creates `user1`…`user5` with random 16-character passwords. You can pass your own names instead (`... alice bob`). The script writes:
+  - `.env.local`: `PI_LAB_USERS` (salted PBKDF2 hashes only) and `PI_LAB_SECRET`. The local server loads this file.
+  - `credentials.local.txt`: the plain passwords, for handing out.
+  Both files are git-ignored and readable only by you.
+- **Sessions:** a signed (HMAC-SHA256) HttpOnly, SameSite=Lax cookie that lasts 7 days.
+  - No session state is kept on the server, so any serverless instance can verify any request.
+  - The same user can be signed in from several browsers at once.
+  - Signing out clears the cookie in that browser. Changing `PI_LAB_SECRET` signs everyone out.
+- **Protection:**
+  - Every `/api` route except health, session and login requires a session.
+  - Write requests must carry `X-Requested-With: pi-lab` (CSRF).
+  - Failed logins are rate-limited per username: 5 per 10 minutes, counted separately on each instance.
+  - Error messages never reveal whether a username exists.
+- **Runs per user:** each run is a gzip-compressed JSON file. The server validates it, computes its summary itself and caps each user at 100 runs.
+  - Locally they go in `data/runs/<user>/`; on Vercel, in a **private Vercel Blob** store.
+  - Your runs follow you to any browser. Runs made before accounts existed show a **Move to my account** button.
+- **Local dev without accounts:** if `.env.local` is missing, auth is off and you are the `local` user. On Vercel the app refuses requests without accounts (it fails closed).
+
+### Serverless notes
+
+- Training is driven by the browser one policy-iteration step per request, with an 8-second evaluation budget and 30-second function limit, so many users can train at once without blocking each other.
+- Runs are moved gzip-compressed because Vercel function bodies are limited to 4.5 MB.
+- The tabular model is cached per warm instance. The first request after an idle period takes about 1–3 s to load numpy, gymnasium and pygame.
 
 ## Deploy on Vercel
 
-1. Push this repo to GitHub.
-2. In Vercel: **Add New → Project → Import** the repo. No build settings are needed; `vercel.json` serves `frontend/` as static files and routes `/api/*` to the Python function `api/index.py`.
-3. Deploy.
+1. Push this repo to GitHub, then in Vercel choose **Add New → Project → Import**. No build settings are needed: `vercel.json` serves `frontend/` statically and routes `/api/*` to `api/index.py`.
+2. **Storage → Create → Blob**, choose **Private** access, and connect it to the project. This adds `BLOB_READ_WRITE_TOKEN`.
+3. **Settings → Environment Variables:** add `PI_LAB_USERS` and `PI_LAB_SECRET`, copying the values from your `.env.local`.
+4. Deploy, and sign in with an account from `credentials.local.txt`.
 
 Or with the CLI: `npm i -g vercel && vercel --prod`.
 
