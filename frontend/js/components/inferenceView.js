@@ -8,7 +8,7 @@ import { sharedRange } from "./trainingView.js";
 import { createGymView } from "./gymView.js";
 import { escapeHtml, hideTooltip, showStateTooltip } from "./tooltip.js";
 
-const MAX_STEPS_LIMIT = 1000;
+const MAX_STEPS_LIMIT = 5000;
 
 export function createInferenceView(root, store, ui) {
   let board = null;

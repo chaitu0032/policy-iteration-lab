@@ -20,7 +20,7 @@ def _optimal(key, options, gamma=0.99):
 
 def test_normalize_options_fills_defaults_and_rejects_bad_values():
     defaults = normalize_options(FROZEN_LAKE, {})
-    assert defaults["map_name"] == "4x4" and defaults["is_slippery"] is True
+    assert defaults["map_name"] == "8x8" and defaults["is_slippery"] is False
     with pytest.raises(ValueError):
         normalize_options(FROZEN_LAKE, {"map_name": "random", "size": 2.5})
     with pytest.raises(ValueError):
@@ -86,10 +86,10 @@ def test_episode_to_dict_has_decoded_states():
 
 
 def test_benchmark_optimal_beats_initial():
-    model = extract_model(FROZEN_LAKE, {"is_slippery": True})
+    model = extract_model(FROZEN_LAKE, {"map_name": "4x4", "is_slippery": True})
     result = policy_iteration(model, PIConfig(gamma=0.99))
     policies = [r.policy for r in result.iterations]
-    rows = benchmark_policies(FROZEN_LAKE, {"is_slippery": True}, [policies[0], policies[-1]],
+    rows = benchmark_policies(FROZEN_LAKE, {"map_name": "4x4", "is_slippery": True}, [policies[0], policies[-1]],
                               episodes=200, start_state=0, seed=0, max_steps=100, gamma=0.99)
     assert rows[1]["success_rate"] > rows[0]["success_rate"]
     assert rows[1]["success_rate"] > 0.6

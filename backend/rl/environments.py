@@ -28,7 +28,6 @@ from .env_specs import (  # noqa: F401  (re-exported for callers)
 
 TAXI_LOC_NAMES = ("R", "G", "Y", "B")
 TAXI_IN_CAR = 4
-MIN_FROZEN_LAKE_STEPS = 100
 
 
 @dataclass(frozen=True)
@@ -64,12 +63,8 @@ class TabularModel:
 
 
 def default_max_steps(key: str, options: dict[str, Any] | None) -> int:
-    opts = normalize_options(key, options)
-    if key == FROZEN_LAKE:
-        env = gym.make(get_spec(key).gym_id, **gym_kwargs(key, opts))
-        n_states = int(env.observation_space.n)
-        env.close()
-        return max(MIN_FROZEN_LAKE_STEPS, 4 * n_states)
+    """Episode step limit used when the caller does not pass one (same for every world)."""
+    normalize_options(key, options)  # validate even though the limit does not depend on them
     return get_spec(key).default_max_steps
 
 

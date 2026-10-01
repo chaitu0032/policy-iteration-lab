@@ -25,9 +25,9 @@ const store = createStore({
   display: { values: true, arrows: true, changes: true, scale: "global" },
   taxiSlice: { passenger: 0, destination: 1 }, galleryArrows: true,
   tableMode: "actions", tableScope: "slice", tableChangedOnly: false,
-  inferIter: null, inferStart: 0, inferSeed: 0, inferMaxSteps: 100, inferSpeedMs: 260,
+  inferIter: null, inferStart: 0, inferSeed: 0, inferMaxSteps: 1000, inferSpeedMs: 260,
   inferShowValues: true, inferShowArrows: true, inferBoard: "both",
-  benchParams: { episodes: 50, seed: 0, max_steps: 100, start_state: null }, trainWarnings: [],
+  benchParams: { episodes: 50, seed: 0, max_steps: 1000, start_state: null }, trainWarnings: [],
 });
 
 // ---------------------------------------------------------------- status

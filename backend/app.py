@@ -37,11 +37,20 @@ from .rl.serialize import env_header, iteration_to_dict
 logger = logging.getLogger("pi_lab")
 
 FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
-MAX_STEPS_LIMIT = 1000
+MAX_STEPS_LIMIT = 5000
 EVAL_TIME_BUDGET_S = 8.0  # keep each request well inside serverless time limits
 MODEL_CACHE_SIZE = 16
 
 app = FastAPI(title="Policy Iteration Lab", version="2.0.0")
+
+
+@app.middleware("http")
+async def no_cache_frontend(request, call_next):
+    """Local dev: always revalidate HTML/JS/CSS so an update never runs against stale cached modules."""
+    response = await call_next(request)
+    if not request.url.path.startswith("/api/"):
+        response.headers["Cache-Control"] = "no-cache"
+    return response
 
 EnvKey = Literal["FrozenLake", "CliffWalking", "Taxi"]
 

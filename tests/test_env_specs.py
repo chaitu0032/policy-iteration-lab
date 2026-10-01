@@ -57,7 +57,8 @@ def test_custom_map_layout_and_start():
 
 
 def test_frozen_lake_reward_schedule_and_success_rate():
-    opts = {"is_slippery": True, "success_rate": 0.9, "reward_goal": 10, "reward_hole": -5, "reward_frozen": -0.1}
+    opts = {"map_name": "4x4", "is_slippery": True, "success_rate": 0.9, "reward_goal": 10, "reward_hole": -5,
+            "reward_frozen": -0.1}
     P = make_env(FROZEN_LAKE, opts).unwrapped.P
     probs = sorted(p for p, *_ in P[14][2])
     assert probs[-1] == pytest.approx(0.9)
@@ -83,3 +84,10 @@ def test_taxi_custom_rewards_and_fickle_passenger():
     policy = policy_iteration(extract_model(TAXI, opts), PIConfig(eval_mode="exact")).optimal.policy
     ep = run_episode(TAXI, opts, policy, start_state=328, seed=0, max_steps=200)
     assert len(ep.steps) > 0  # fickle dynamics are outside P; episode must still run cleanly
+
+
+def test_frozen_lake_default_is_8x8_shortest_path():
+    """Default config (8x8, deterministic, gamma=0.99) yields the 14-step shortest path."""
+    policy = policy_iteration(extract_model(FROZEN_LAKE, {}), PIConfig(gamma=0.99)).optimal.policy
+    ep = run_episode(FROZEN_LAKE, {}, policy, start_state=0, seed=0)
+    assert ep.success and len(ep.steps) == 14

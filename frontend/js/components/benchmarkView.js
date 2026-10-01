@@ -27,7 +27,7 @@ export function createBenchmarkView(root, store, ui) {
     return {
       episodes: Math.min(1000, Math.max(1, Math.round(+q("b-episodes").value || 1))),
       seed: Math.max(0, Math.round(+q("b-seed").value || 0)),
-      max_steps: Math.min(1000, Math.max(1, Math.round(+q("b-max").value || 1))),
+      max_steps: Math.min(5000, Math.max(1, Math.round(+q("b-max").value || 1))),
       start_state: startRaw === "env" ? null : +startRaw,
     };
   }
@@ -75,7 +75,7 @@ export function createBenchmarkView(root, store, ui) {
         <div class="toolbar" style="margin:0">
           <div class="field" style="grid-template-columns:auto 90px;margin:0"><label>Episodes / policy</label><input type="number" min="1" max="1000" data-role="b-episodes" value="${p.episodes}"/></div>
           <div class="field" style="grid-template-columns:auto 90px;margin:0"><label>Seed</label><input type="number" min="0" data-role="b-seed" value="${p.seed}"/></div>
-          <div class="field" style="grid-template-columns:auto 90px;margin:0"><label>Max steps</label><input type="number" min="1" max="1000" data-role="b-max" value="${p.max_steps}"/></div>
+          <div class="field" style="grid-template-columns:auto 90px;margin:0"><label>Max steps</label><input type="number" min="1" max="5000" data-role="b-max" value="${p.max_steps}"/></div>
           <div class="field" style="grid-template-columns:auto 260px;margin:0"><label>Start</label><select data-role="b-start">${startOptions}</select></div>
           <button class="btn primary" data-act="run" ${current?.running ? "disabled" : ""}>▶ Start benchmark</button>
           <button class="btn danger" data-act="stop" ${current?.running ? "" : "disabled"}>■ Stop</button>

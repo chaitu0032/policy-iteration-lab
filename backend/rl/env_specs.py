@@ -19,6 +19,7 @@ TAXI = "Taxi"
 REWARD_LIMIT = 1000.0
 MAX_CUSTOM_MAP_SIDE = 16
 DEFAULT_CUSTOM_MAP = "SFFF\nFHFH\nFFFH\nHFFG"
+DEFAULT_MAX_STEPS = 1000  # episode step limit (gymnasium TimeLimit) for inference / benchmark
 
 # gymnasium's built-in reward constants that we remap for envs without a reward argument
 CLIFF_NATIVE_FALL = -100
@@ -57,7 +58,7 @@ SPECS: dict[str, EnvSpec] = {
         action_names=("Left", "Down", "Right", "Up"),
         action_vectors=((0, -1), (1, 0), (0, 1), (-1, 0)),
         option_schema={
-            "map_name": {"type": "select", "choices": ["4x4", "8x8", "random", "custom"], "default": "4x4",
+            "map_name": {"type": "select", "choices": ["4x4", "8x8", "random", "custom"], "default": "8x8",
                          "label": "Map", "group": "dynamics"},
             "custom_map": {"type": "map", "default": DEFAULT_CUSTOM_MAP, "label": "Custom map (desc)",
                            "group": "dynamics", "visible_if": {"map_name": "custom"},
@@ -68,7 +69,8 @@ SPECS: dict[str, EnvSpec] = {
                             "label": "Frozen-tile probability", "group": "dynamics", "visible_if": _FROZEN_RANDOM},
             "map_seed": {"type": "int", "min": 0, "max": 1_000_000, "default": 42, "label": "Map seed",
                          "group": "dynamics", "visible_if": _FROZEN_RANDOM},
-            "is_slippery": {"type": "bool", "default": True, "label": "Slippery ice", "group": "dynamics"},
+            # Default: deterministic ice, so with gamma < 1 the optimal policy is the shortest safe path.
+            "is_slippery": {"type": "bool", "default": False, "label": "Slippery ice", "group": "dynamics"},
             "success_rate": {"type": "float", "min": 0.0, "max": 1.0, "step": 0.01, "default": round(1 / 3, 4),
                              "label": "Success rate", "group": "dynamics", "visible_if": {"is_slippery": True},
                              "hint": "P(intended move); the rest is split between the two perpendicular moves."},
@@ -76,7 +78,7 @@ SPECS: dict[str, EnvSpec] = {
             "reward_hole": _reward("Reward: fall in hole", 0.0),
             "reward_frozen": _reward("Reward: frozen step", 0.0, "Negative = step penalty (encourages short paths)"),
         },
-        default_max_steps=100,
+        default_max_steps=DEFAULT_MAX_STEPS,
     ),
     CLIFF_WALKING: EnvSpec(
         key=CLIFF_WALKING, gym_id="CliffWalking-v1", title="Cliff Walking",
@@ -90,7 +92,7 @@ SPECS: dict[str, EnvSpec] = {
             "reward_cliff": _reward("Reward: fall off cliff", -100.0),
             "reward_goal": _reward("Reward: step into goal", -1.0),
         },
-        default_max_steps=200,
+        default_max_steps=DEFAULT_MAX_STEPS,
     ),
     TAXI: EnvSpec(
         key=TAXI, gym_id=_taxi_gym_id(), title="Taxi",
@@ -111,7 +113,7 @@ SPECS: dict[str, EnvSpec] = {
             "reward_illegal": _reward("Reward: illegal pickup/dropoff", -10.0),
             "reward_dropoff": _reward("Reward: successful dropoff", 20.0),
         },
-        default_max_steps=200,
+        default_max_steps=DEFAULT_MAX_STEPS,
     ),
 }
 

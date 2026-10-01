@@ -54,9 +54,8 @@ The backend is **stateless**. The browser runs policy iteration one `/api/pi/ste
 
 ```bash
 pip install -r requirements-dev.txt
-uvicorn backend.app:app --reload --port 8000
-# open http://localhost:8000
-pytest --cov=backend      # 51 tests
+./run.sh                  # frees port 8765 if needed, then serves http://localhost:8765
+pytest --cov=backend      # 52 tests
 ```
 
 ## Deploy on Vercel
@@ -66,3 +65,7 @@ pytest --cov=backend      # 51 tests
 3. Deploy.
 
 Or with the CLI: `npm i -g vercel && vercel --prod`.
+
+### Defaults
+
+FrozenLake opens on the **8×8 map with slippery ice off and γ = 0.99**. Every move is then deterministic and the goal reward is discounted per step, so π★ is the 14-step shortest safe path. Turn slippery ice on (success rate 1/3) to see the optimal policy switch to long, cautious detours.

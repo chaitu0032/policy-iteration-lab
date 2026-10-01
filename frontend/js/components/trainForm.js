@@ -19,7 +19,8 @@ const LIVE_FIELDS = [
     hint: "Pause between policy-iteration steps so you can watch each π_k appear. Adjustable while training." },
 ];
 
-const STORAGE_KEY = "pi-lab-form-v1";
+// Bump the version whenever defaults change so stale saved values do not override them.
+const STORAGE_KEY = "pi-lab-form-v2";
 
 function loadSaved() {
   try {

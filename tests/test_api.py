@@ -3,7 +3,7 @@ from fastapi.testclient import TestClient
 
 from backend.app import app
 
-DET_LAKE = {"env_key": "FrozenLake", "options": {"is_slippery": False}}
+DET_LAKE = {"env_key": "FrozenLake", "options": {"map_name": "4x4", "is_slippery": False}}
 
 
 @pytest.fixture(scope="module")
@@ -115,3 +115,11 @@ def test_render_without_pygame_returns_501(client, monkeypatch):
 
     monkeypatch.setattr(builtins, "__import__", fake_import)
     assert client.post("/api/render", json={**DET_LAKE, "state": 0}).status_code == 501
+
+
+def test_default_episode_step_limit_is_1000(client):
+    lay = client.post("/api/layout", json={"env_key": "Taxi"}).json()
+    assert lay["env"]["default_max_steps"] == 1000
+    ok = client.post("/api/infer", json={**DET_LAKE, "policy": [0] * 16, "start_state": 0, "max_steps": 5000})
+    assert ok.status_code == 200 and ok.json()["length"] == 5000  # Left forever on 4x4 = truncated at the limit
+    assert client.post("/api/infer", json={**DET_LAKE, "policy": [0] * 16, "max_steps": 5001}).status_code == 422
