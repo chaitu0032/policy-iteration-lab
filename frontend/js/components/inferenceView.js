@@ -5,6 +5,7 @@ import { formatValue } from "../colors.js";
 import { mountBoard } from "../renderers/board.js";
 import { decodeTaxi, describeState, encodeTaxi, PASSENGER_LABELS } from "../taxi.js";
 import { sharedRange } from "./trainingView.js";
+import { createGymView } from "./gymView.js";
 import { escapeHtml, hideTooltip, showStateTooltip } from "./tooltip.js";
 
 const MAX_STEPS_LIMIT = 1000;
@@ -12,6 +13,7 @@ const MAX_STEPS_LIMIT = 1000;
 export function createInferenceView(root, store, ui) {
   let board = null;
   let boardRunId = null;
+  let gym = null;
   let local = freshLocal();
   let timer = null;
   let compareToken = 0;
@@ -148,8 +150,21 @@ export function createInferenceView(root, store, ui) {
     root.innerHTML = `
       <div class="grid-2">
         <div class="card board-card">
-          <div class="card-head" style="width:100%"><h3 data-role="title"></h3><span data-role="outcome" class="outcome"></span></div>
-          <div class="board-wrap" data-role="board"></div>
+          <div class="card-head" style="width:100%">
+            <h3 data-role="title"></h3>
+            <div class="row" style="display:flex;gap:10px;align-items:center">
+              <span data-role="outcome" class="outcome"></span>
+              <div class="seg" role="group" aria-label="Board view">
+                <button type="button" data-boardmode="analysis">Analysis</button>
+                <button type="button" data-boardmode="gym">Gymnasium</button>
+                <button type="button" data-boardmode="both">Side by side</button>
+              </div>
+            </div>
+          </div>
+          <div class="boards">
+            <div class="board-wrap" data-role="board"></div>
+            <div class="gym-wrap" data-role="gym"></div>
+          </div>
           <div class="toolbar" style="margin:0">
             <div class="btn-row">
               <button class="btn primary" data-act="start">▶ Start episode</button>
@@ -192,6 +207,7 @@ export function createInferenceView(root, store, ui) {
       </div>`;
     board = mountBoard(root.querySelector('[data-role="board"]'), run, {
       getView: boardView,
+      getMaxWidth: () => gymWidth(),
       onHover: (state, e) => showStateTooltip(e, run, ctx().it, state),
       onClick: (state) => {
         if (run.layout.kind === "taxi") {
@@ -205,11 +221,20 @@ export function createInferenceView(root, store, ui) {
     });
     root.querySelector(".board-wrap").addEventListener("mouseleave", hideTooltip);
     boardRunId = run.id;
+    gym = createGymView(root.querySelector('[data-role="gym"]'), ui);
+    gym.mount(run, gymWidth()).then(() => render());
     wire();
   }
 
   // Delegated once: survives re-rendering of the shell when another run is opened.
   root.addEventListener("click", (e) => {
+    const mode = e.target.closest("[data-boardmode]")?.dataset.boardmode;
+    if (mode) {
+      store.set({ inferBoard: mode });
+      gym?.resize(gymWidth(mode));
+      board?.refit();
+      return;
+    }
     const act = e.target.closest("[data-act]")?.dataset.act;
     if (!act || !store.get().run) return;
     const { run } = ctx();
@@ -256,6 +281,20 @@ export function createInferenceView(root, store, ui) {
     taxiSel("t-dest", "destination");
   }
 
+  function gymWidth(mode = store.get().inferBoard) {
+    const avail = root.querySelector(".boards")?.clientWidth || 700;
+    return mode === "both" ? Math.max(240, Math.floor(avail / 2) - 28) : Math.min(760, avail);
+  }
+
+  function applyBoardMode(mode) {
+    root.querySelector('[data-role="board"]').hidden = mode === "gym";
+    root.querySelector('[data-role="gym"]').hidden = mode === "analysis";
+    root.querySelectorAll("[data-boardmode]").forEach((b) => {
+      b.classList.toggle("active", b.dataset.boardmode === mode);
+      b.setAttribute("aria-pressed", String(b.dataset.boardmode === mode));
+    });
+  }
+
   function render() {
     const { s, run, k, it } = ctx();
     if (boardRunId !== run.id || !root.querySelector('[data-role="board"]')) shell(run);
@@ -286,7 +325,10 @@ export function createInferenceView(root, store, ui) {
     const scrub = q('[data-role="scrub"]');
     scrub.max = String(local.episode?.steps.length ?? 0);
     scrub.value = String(local.frame);
+    applyBoardMode(s.inferBoard);
     board.redraw();
+    gym?.update({ episode: local.episode, frame: local.frame, startState: s.inferStart,
+                  playing: local.playing, speedMs: s.inferSpeedMs });
     renderStats(run, it);
     renderLog(run);
     renderCompare(run);

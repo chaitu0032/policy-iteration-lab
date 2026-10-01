@@ -2,21 +2,23 @@
 
 import { textColorFor, valueColor, formatValue } from "../colors.js";
 import { drawArrow, drawText, drawTrail, roundRect, strokeCell, setupCanvas } from "./draw.js";
+import { alphaTemplate, token } from "../theme.js";
 
+// Tile colours echo gymnasium's sprites: pale ice, deep hole water, moss for the cliff meadow, gift gold.
 const TILE = {
-  S: "#cfe6f5",
-  F: "#d9edf8",
-  ".": "#25314d",
-  H: "#0a1424",
-  G: "#f4c542",
-  C: "#5a1724",
+  S: "#dbe9f4",
+  F: "#e4f0f8",
+  ".": "#2b3a2c",
+  H: "#10233a",
+  G: "#efc35a",
+  C: "#3d1a1f",
 };
 
 function drawBaseTile(ctx, type, x, y, size, envKey) {
   ctx.fillStyle = TILE[type] || TILE["."];
   ctx.fillRect(x, y, size, size);
   if (type === "H") {
-    ctx.fillStyle = "#1b3358";
+    ctx.fillStyle = "#2a5a8c";
     ctx.beginPath();
     ctx.ellipse(x + size / 2, y + size / 2, size * 0.34, size * 0.24, 0, 0, Math.PI * 2);
     ctx.fill();
@@ -25,7 +27,7 @@ function drawBaseTile(ctx, type, x, y, size, envKey) {
     ctx.beginPath();
     ctx.rect(x, y, size, size);
     ctx.clip();
-    ctx.strokeStyle = "rgba(255,107,122,.35)";
+    ctx.strokeStyle = "rgba(240,120,110,.28)";
     ctx.lineWidth = 3;
     for (let i = -size; i < size; i += 9) {
       ctx.beginPath();
@@ -58,7 +60,7 @@ export function createGridBoard(canvas, run) {
 
   function draw(view) {
     const ctx = setupCanvas(canvas, cols * size, rows * size);
-    ctx.fillStyle = "#0b1020";
+    ctx.fillStyle = token("bg");
     ctx.fillRect(0, 0, cols * size, rows * size);
 
     for (let s = 0; s < rows * cols; s += 1) {
@@ -74,15 +76,15 @@ export function createGridBoard(canvas, run) {
         ctx.fillRect(x, y, size, size);
         if (type === "S") drawText(ctx, "S", x + 8, y + 9, { size: 10, color: textColorFor(v, view.range), weight: 700 });
       } else if (type === "S") {
-        drawText(ctx, "S", x + size / 2, y + size / 2, { size: size * 0.3, color: "#3b5b80", weight: 700 });
+        drawText(ctx, "S", x + size / 2, y + size / 2, { size: size * 0.3, color: "#5b7fa3", weight: 700 });
       }
-      ctx.strokeStyle = "rgba(11,16,32,.55)";
+      ctx.strokeStyle = "rgba(10,14,20,.35)";
       ctx.lineWidth = 1;
       ctx.strokeRect(x + 0.5, y + 0.5, size - 1, size - 1);
 
       if (!terminal.has(s) && type !== "C") {
-        const fg = overlay ? textColorFor(v, view.range) : "#0b1020";
-        const arrowColor = overlay ? fg : (type === "." ? "#cfd8ee" : "#25314d");
+        const fg = overlay ? textColorFor(v, view.range) : "#14202c";
+        const arrowColor = overlay ? fg : (type === "." ? "#dfe8d6" : "#2c3e52");
         if (view.showArrows && view.policy) {
           const vec = env.action_vectors[view.policy[s]];
           if (vec) drawArrow(ctx, x + size / 2, y + size / 2 - (view.showValues ? size * 0.08 : 0), vec[0], vec[1], size, arrowColor);
@@ -91,13 +93,13 @@ export function createGridBoard(canvas, run) {
           drawText(ctx, formatValue(v), x + size / 2, y + size - Math.max(9, size * 0.16), { size: Math.max(9, Math.min(13, size * 0.2)), color: fg });
         }
       }
-      if (view.showChanges && view.changed?.has(s)) strokeCell(ctx, x, y, size, "#ffb547", 2.5);
+      if (view.showChanges && view.changed?.has(s)) strokeCell(ctx, x, y, size, token("warn"), 2.5);
     }
 
-    if (view.startState != null) strokeCell(ctx, ...cellXY(view.startState), size, "#4fd18b", 3, 3);
-    if (view.selected != null) strokeCell(ctx, ...cellXY(view.selected), size, "#5ad1e6", 3, 1);
+    if (view.startState != null) strokeCell(ctx, ...cellXY(view.startState), size, token("good"), 3, 3);
+    if (view.selected != null) strokeCell(ctx, ...cellXY(view.selected), size, token("accent"), 3, 1);
     if (view.hover != null) strokeCell(ctx, ...cellXY(view.hover), size, "rgba(255,255,255,.7)", 1.5, 1);
-    if (view.trail?.length) drawTrail(ctx, view.trail.map(center), size, "rgba(139,123,255,ALPHA)");
+    if (view.trail?.length) drawTrail(ctx, view.trail.map(center), size, alphaTemplate("accent-2"));
     if (view.agent != null) drawAgent(ctx, view.agent, view.agentStatus);
   }
 
@@ -108,7 +110,7 @@ export function createGridBoard(canvas, run) {
 
   function drawAgent(ctx, s, status) {
     const [cx, cy] = center(s);
-    const color = status === "success" ? "#4fd18b" : status === "fail" ? "#ff6b7a" : "#8b7bff";
+    const color = token(status === "success" ? "good" : status === "fail" ? "bad" : "accent-2");
     ctx.save();
     ctx.shadowColor = color;
     ctx.shadowBlur = 12;
@@ -117,7 +119,7 @@ export function createGridBoard(canvas, run) {
     ctx.arc(cx, cy, size * 0.26, 0, Math.PI * 2);
     ctx.fill();
     ctx.shadowBlur = 0;
-    ctx.fillStyle = "#0b1020";
+    ctx.fillStyle = "#14141c";
     ctx.beginPath();
     ctx.arc(cx - size * 0.08, cy - size * 0.04, size * 0.04, 0, Math.PI * 2);
     ctx.arc(cx + size * 0.08, cy - size * 0.04, size * 0.04, 0, Math.PI * 2);

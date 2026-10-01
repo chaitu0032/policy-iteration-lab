@@ -93,3 +93,25 @@ def test_benchmark(client):
     assert len(res["rows"]) == len(policies) and res["rows"][-1]["success_rate"] == 1.0
     too_many = client.post("/api/benchmark", json={**DET_LAKE, "policies": policies, "episodes": 5000})
     assert too_many.status_code == 422
+
+
+@pytest.mark.parametrize("env, state", [(DET_LAKE, 5), ({"env_key": "CliffWalking"}, 36), ({"env_key": "Taxi"}, 328)])
+def test_render_real_gym_frame(client, env, state):
+    pytest.importorskip("pygame")
+    res = client.post("/api/render", json={**env, "state": state, "last_action": 2})
+    assert res.status_code == 200, res.text
+    assert res.json()["image"].startswith("data:image/png;base64,")
+    assert client.post("/api/render", json={**env, "state": 99999}).status_code == 422
+
+
+def test_render_without_pygame_returns_501(client, monkeypatch):
+    import builtins
+    real_import = builtins.__import__
+
+    def fake_import(name, *args, **kwargs):
+        if name == "pygame":
+            raise ImportError("no pygame")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", fake_import)
+    assert client.post("/api/render", json={**DET_LAKE, "state": 0}).status_code == 501

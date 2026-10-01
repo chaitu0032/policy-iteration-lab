@@ -1,10 +1,12 @@
 // Value colormaps. Sequential (viridis-like) for one-signed values, diverging when V spans 0.
 
+// Sequential: deep indigo -> teal -> mint -> warm cream (perceptually ordered, readable on a dark UI).
 const SEQUENTIAL = [
-  [68, 1, 84], [59, 82, 139], [33, 145, 140], [94, 201, 98], [253, 231, 37],
+  [38, 36, 78], [44, 82, 130], [33, 128, 141], [64, 174, 132], [166, 214, 126], [246, 236, 170],
 ];
+// Diverging: brick red (negative) -> slate (zero) -> sea teal (positive).
 const DIVERGING = [
-  [178, 24, 43], [239, 138, 98], [247, 247, 247], [103, 169, 207], [33, 102, 172],
+  [176, 58, 62], [224, 128, 102], [58, 66, 82], [84, 166, 176], [150, 222, 200],
 ];
 
 function interpolate(stops, t) {
@@ -41,7 +43,7 @@ export function valueColor(v, [lo, hi], alpha = 1) {
 
 export function textColorFor(v, range) {
   const [r, g, b] = valueColor(v, range).match(/\d+/g).map(Number);
-  return 0.299 * r + 0.587 * g + 0.114 * b > 150 ? "#0b1020" : "#f4f6fb";
+  return 0.299 * r + 0.587 * g + 0.114 * b > 150 ? "#141821" : "#f3f5f8";
 }
 
 export function gradientCss(range) {

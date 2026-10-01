@@ -5,6 +5,8 @@ Interactive, from-scratch **policy iteration** on Gymnasium toy-text environment
 - Custom policy iteration (no RL library): iterative *or* exact policy evaluation, greedy improvement with tie-keeping, stores **π, V and Q for every iteration** plus the evaluation-sweep trace.
 - **Live training** with Start / Pause / Resume / Stop and an adjustable per-iteration delay.
 - **Every Gymnasium parameter configurable** (custom/random FrozenLake maps, slipperiness and success rate, rainy/fickle Taxi, …) plus **custom rewards** for all three envs. Each option shows whether it is a native Gymnasium argument (`gym`) or an app extension (`lab`).
+- **Gymnasium render view** in Inference: Analysis / Gymnasium / Side-by-side. The Gymnasium view redraws the episode with Gymnasium's own sprites (a canvas replica of `env.render()`), animating the elf or cab. Tick **Real env.render()** to fetch the exact pygame frame from the server via `/api/render`.
+- Each world tints the UI with a colour from its sprites: ice blue, meadow green, cab yellow.
 - Views: training replay (V heatmap and policy arrows, eval-sweep scrubber, residual charts, state inspector), value-function gallery, policy table, inference (play π₀…π★ step by step), and a Monte-Carlo benchmark of all policies.
 - Short theory notes with equations on every view.
 
@@ -39,7 +41,10 @@ backend/rl/
   policy_iteration.py custom policy iteration (evaluation, Q, improvement, step + full loop)
   inference.py        rollouts from arbitrary start states, Monte-Carlo benchmark
   serialize.py        JSON for each iteration (policy, V, Q, eval trace)
+  render.py           real gymnasium env.render() frames (rgb_array -> PNG), needs pygame
 frontend/             vanilla JS (ES modules) + canvas renderers + SVG charts, KaTeX for equations
+frontend/js/world/    gymnasium-sprite renderers (FrozenLake, CliffWalking, Taxi) mirroring _render_gui
+frontend/assets/gym/  sprites copied from Gymnasium (MIT, see NOTICE.md)
 tests/                pytest (unit + API)
 ```
 
@@ -51,7 +56,7 @@ The backend is **stateless**. The browser runs policy iteration one `/api/pi/ste
 pip install -r requirements-dev.txt
 uvicorn backend.app:app --reload --port 8000
 # open http://localhost:8000
-pytest --cov=backend      # 47 tests
+pytest --cov=backend      # 51 tests
 ```
 
 ## Deploy on Vercel

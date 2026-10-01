@@ -4,8 +4,10 @@
 import { formatValue, textColorFor, valueColor } from "../colors.js";
 import { decodeTaxi, encodeTaxi, TAXI_IN_CAR } from "../taxi.js";
 import { drawArrow, drawBadgeGlyph, drawPerson, drawText, drawTrail, roundRect, setupCanvas, strokeCell } from "./draw.js";
+import { alphaTemplate, token } from "../theme.js";
 
-const LOC_COLORS = ["#ff6b7a", "#4fd18b", "#f6c544", "#5aa8ff"];
+// R, G, Y, B depots (gymnasium colours, softened for a dark board)
+const LOC_COLORS = ["#ef6b6b", "#5cc98a", "#e9c74d", "#5e9cf0"];
 
 export function createTaxiBoard(canvas, run) {
   const { layout, env } = run;
@@ -33,7 +35,7 @@ export function createTaxiBoard(canvas, run) {
     const W = cols * size + 2 * pad;
     const H = rows * size + 2 * pad;
     const ctx = setupCanvas(canvas, W, H);
-    ctx.fillStyle = "#0b1020";
+    ctx.fillStyle = token("bg");
     ctx.fillRect(0, 0, W, H);
     const slice = sliceOf(view);
     const isTerminalSlice = slice.passenger === slice.destination;
@@ -42,7 +44,7 @@ export function createTaxiBoard(canvas, run) {
       for (let c = 0; c < cols; c += 1) {
         const [x, y] = xy(r, c);
         const s = encodeTaxi(r, c, slice.passenger, slice.destination);
-        ctx.fillStyle = "#1c2742";
+        ctx.fillStyle = "#2a2f37"; // asphalt
         ctx.fillRect(x, y, size, size);
         const locIdx = locs.findIndex(([lr, lc]) => lr === r && lc === c);
         if (locIdx >= 0) {
@@ -58,22 +60,22 @@ export function createTaxiBoard(canvas, run) {
         if (locIdx >= 0) {
           drawText(ctx, locNames[locIdx], x + 10, y + 11, { size: 12, color: LOC_COLORS[locIdx], weight: 700 });
         }
-        const fg = overlay ? textColorFor(v, view.range) : "#cfd8ee";
+        const fg = overlay ? textColorFor(v, view.range) : "#e3e7ee";
         if (view.showArrows && view.policy && !isTerminalSlice) {
           const a = view.policy[s];
           const vec = env.action_vectors[a];
           const cy = y + size / 2 - (view.showValues ? size * 0.08 : 0);
           if (vec) drawArrow(ctx, x + size / 2, cy, vec[0], vec[1], size, fg);
-          else drawBadgeGlyph(ctx, x + size / 2, cy, size, env.action_names[a][0], a === 4 ? "#5ad1e6" : "#f6c544");
+          else drawBadgeGlyph(ctx, x + size / 2, cy, size, env.action_names[a][0], a === 4 ? "#7fd0ff" : "#f6c445");
         }
         if (overlay && size >= 40) {
           drawText(ctx, formatValue(v), x + size / 2, y + size - Math.max(9, size * 0.15), { size: Math.max(9, Math.min(13, size * 0.18)), color: fg });
         }
         ctx.strokeStyle = "rgba(255,255,255,.08)";
         ctx.strokeRect(x + 0.5, y + 0.5, size - 1, size - 1);
-        if (view.showChanges && view.changed?.has(s)) strokeCell(ctx, x, y, size, "#ffb547", 2.5);
-        if (view.startState === s) strokeCell(ctx, x, y, size, "#4fd18b", 3, 3);
-        if (view.selected === s) strokeCell(ctx, x, y, size, "#5ad1e6", 3, 1);
+        if (view.showChanges && view.changed?.has(s)) strokeCell(ctx, x, y, size, token("warn"), 2.5);
+        if (view.startState === s) strokeCell(ctx, x, y, size, token("good"), 3, 3);
+        if (view.selected === s) strokeCell(ctx, x, y, size, token("accent"), 3, 1);
         if (view.hover === s) strokeCell(ctx, x, y, size, "rgba(255,255,255,.7)", 1.5, 1);
       }
     }
@@ -85,14 +87,14 @@ export function createTaxiBoard(canvas, run) {
       drawPerson(ctx, cx + size * 0.28, cy - size * 0.18, size * 0.8);
     }
     if (view.trail?.length) {
-      drawTrail(ctx, view.trail.map((s) => { const d = decodeTaxi(s); return centerOf(d.row, d.col); }), size, "rgba(139,123,255,ALPHA)");
+      drawTrail(ctx, view.trail.map((s) => { const d = decodeTaxi(s); return centerOf(d.row, d.col); }), size, alphaTemplate("accent-2"));
     }
     if (view.agent != null) drawTaxi(ctx, decodeTaxi(view.agent), view.agentStatus);
   }
 
   function drawWalls(ctx, W, H) {
     ctx.save();
-    ctx.strokeStyle = "#e7ecf7";
+    ctx.strokeStyle = "#d9dee6";
     ctx.lineWidth = 4;
     ctx.lineCap = "round";
     roundRect(ctx, pad - 2, pad - 2, W - 2 * pad + 4, H - 2 * pad + 4, 6);
@@ -123,13 +125,13 @@ export function createTaxiBoard(canvas, run) {
     const h = size * 0.36;
     const loaded = d.passenger === TAXI_IN_CAR;
     ctx.save();
-    ctx.shadowColor = status === "success" ? "#4fd18b" : "#f6c544";
+    ctx.shadowColor = token(status === "success" ? "good" : "star");
     ctx.shadowBlur = 14;
-    ctx.fillStyle = status === "success" ? "#4fd18b" : loaded ? "#ffd84d" : "#f6c544";
+    ctx.fillStyle = status === "success" ? token("good") : loaded ? "#ffd75e" : "#f6c445";
     roundRect(ctx, cx - w / 2, cy - h / 2, w, h, 8);
     ctx.fill();
     ctx.shadowBlur = 0;
-    ctx.fillStyle = "#0b1020";
+    ctx.fillStyle = "#14141c";
     roundRect(ctx, cx - w * 0.3, cy - h * 0.38, w * 0.6, h * 0.34, 4);
     ctx.fill();
     ctx.beginPath();

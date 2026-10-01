@@ -43,7 +43,7 @@ export function drawBadgeGlyph(ctx, cx, cy, size, label, color) {
   ctx.beginPath();
   ctx.arc(cx, cy, size * 0.2, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = "#0b1020";
+  ctx.fillStyle = "#14141c";
   ctx.font = `700 ${Math.round(size * 0.22)}px IBM Plex Mono, monospace`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";

@@ -39,4 +39,5 @@ export const api = {
   step: (payload) => request("POST", "/api/pi/step", payload),
   infer: (payload) => request("POST", "/api/infer", payload),
   benchmark: (payload) => request("POST", "/api/benchmark", payload),
+  render: (payload) => request("POST", "/api/render", payload),
 };

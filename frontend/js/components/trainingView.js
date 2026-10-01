@@ -4,6 +4,7 @@ import { formatValue, gradientCss, valueRange } from "../colors.js";
 import { mountBoard } from "../renderers/board.js";
 import { PASSENGER_LABELS } from "../taxi.js";
 import { renderChart } from "./chart.js";
+import { SERIES } from "../theme.js";
 import { renderInspector } from "./stateInspector.js";
 import { escapeHtml, hideTooltip, showStateTooltip } from "./tooltip.js";
 
@@ -221,21 +222,21 @@ export function createTrainingView(root, store, actions) {
     const xf = (i) => `π${i}`;
     renderChart(root.querySelector('[data-role="chart-v"]'), {
       series: [
-        { label: "V(s₀)", color: "#5ad1e6", values: its.map((x) => x.stats.v_start) },
-        { label: "mean V over start states", color: "#8b7bff", values: its.map((x) => x.stats.v_mean), dashed: true },
+        { label: "V(s₀)", color: SERIES.primary, values: its.map((x) => x.stats.v_start) },
+        { label: "mean V over start states", color: SERIES.secondary, values: its.map((x) => x.stats.v_mean), dashed: true },
       ], selected: s.selectedIter, onSelect: select, xFormat: xf,
     });
     renderChart(root.querySelector('[data-role="chart-c"]'), {
-      series: [{ label: "# states changed", color: "#ffb547", type: "bar", values: its.map((x) => x.stats.n_changed) }],
+      series: [{ label: "# states changed", color: SERIES.warn, type: "bar", values: its.map((x) => x.stats.n_changed) }],
       selected: s.selectedIter, onSelect: select, xFormat: xf, height: 130,
     });
     renderChart(root.querySelector('[data-role="chart-s"]'), {
-      series: [{ label: `eval sweeps (${run.config.eval_mode})`, color: "#4fd18b", type: "bar", values: its.map((x) => x.eval_sweeps) }],
+      series: [{ label: `eval sweeps (${run.config.eval_mode})`, color: SERIES.good, type: "bar", values: its.map((x) => x.eval_sweeps) }],
       selected: s.selectedIter, onSelect: select, xFormat: xf, height: 130,
     });
     root.querySelector('[data-role="resid-title"]').textContent = `Policy-evaluation residual max|ΔV| for π${it.index} (log scale)`;
     renderChart(root.querySelector('[data-role="chart-r"]'), {
-      series: [{ label: `max|ΔV| per sweep · θ=${run.config.theta}`, color: "#ff6b7a", values: it.eval_deltas.map((d) => Math.max(d, 1e-16)) }],
+      series: [{ label: `max|ΔV| per sweep · θ=${run.config.theta}`, color: SERIES.bad, values: it.eval_deltas.map((d) => Math.max(d, 1e-16)) }],
       log: true, height: 150, xFormat: (i) => i + 1,
     });
   }

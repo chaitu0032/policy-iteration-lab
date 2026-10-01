@@ -9,9 +9,10 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" />
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+  <link rel="icon" href="assets/gym/elf_down.png" />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
-<body>
+<body data-env="FrozenLake">
   <header class="topbar">
     <div class="brand">
       <span class="brand-mark">π</span>
@@ -49,7 +50,7 @@
           </ol>
           <div class="primer" id="primer"></div>
         </div>
-        <div class="preview-wrap"><canvas id="preview-canvas"></canvas><div class="caption">Environment preview</div></div>
+        <div class="preview-wrap"><div class="gym-frame"><canvas id="preview-canvas" aria-label="Gymnasium render of the selected world"></canvas></div><div class="caption">Rendered with gymnasium's own sprites</div></div>
       </section>
 
       <section id="run-view" hidden>

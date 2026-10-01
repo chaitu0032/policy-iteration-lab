@@ -12,7 +12,7 @@ export function createRenderer(canvas, run) {
  * Mount an interactive board inside ``container``.
  * getView() -> current view object; onHover(state|null, event); onClick(state, event).
  */
-export function mountBoard(container, run, { getView, onHover, onClick, maxWidth, maxHeight } = {}) {
+export function mountBoard(container, run, { getView, onHover, onClick, maxWidth, getMaxWidth, maxHeight } = {}) {
   container.innerHTML = "";
   const canvas = document.createElement("canvas");
   canvas.className = "board";
@@ -21,7 +21,7 @@ export function mountBoard(container, run, { getView, onHover, onClick, maxWidth
   let hover = null;
 
   const fit = () => {
-    const avail = maxWidth || Math.max(240, container.parentElement?.clientWidth || 600);
+    const avail = getMaxWidth?.() || maxWidth || Math.max(240, container.parentElement?.clientWidth || 600);
     renderer.resize(cellSizeFor(renderer.dims.cols, renderer.dims.rows, Math.min(avail, 760), maxHeight));
   };
 

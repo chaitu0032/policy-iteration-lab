@@ -31,6 +31,7 @@ from .rl.environments import (
 )
 from .rl.inference import MAX_BENCHMARK_EPISODES, benchmark_policies, episode_to_dict, run_episode
 from .rl.policy_iteration import PIConfig, initial_policy, policy_iteration, policy_iteration_step
+from .rl.render import RenderUnavailable, render_frame
 from .rl.serialize import env_header, iteration_to_dict
 
 logger = logging.getLogger("pi_lab")
@@ -81,6 +82,11 @@ class InferRequest(EnvRequest):
     start_state: int | None = Field(None, ge=0)
     seed: int | None = Field(None, ge=0, le=2**31 - 1)
     max_steps: int | None = Field(None, ge=1, le=MAX_STEPS_LIMIT)
+
+
+class RenderRequest(EnvRequest):
+    state: int = Field(ge=0)
+    last_action: int | None = Field(None, ge=0, le=5)
 
 
 class BenchmarkRequest(EnvRequest):
@@ -226,6 +232,19 @@ def benchmark(req: BenchmarkRequest) -> dict[str, Any]:
                               start_state=req.start_state, seed=req.seed, max_steps=req.max_steps,
                               gamma=req.gamma)
     return {"episodes": req.episodes, "start_state": req.start_state, "rows": rows}
+
+
+@app.post("/api/render")
+def render(req: RenderRequest) -> dict[str, Any]:
+    """Exact gymnasium (pygame) frame for one state — the frontend's sprite view mirrors this."""
+    options = _options(req)
+    model, _ = _model_and_layout(req.env_key, options)
+    if req.state >= model.n_states or (req.last_action is not None and req.last_action >= model.n_actions):
+        raise HTTPException(status_code=422, detail="state or last_action out of range")
+    try:
+        return {"image": render_frame(req.env_key, options, req.state, req.last_action)}
+    except RenderUnavailable as exc:
+        raise HTTPException(status_code=501, detail=str(exc)) from exc
 
 
 # Local dev: serve the frontend from the same origin (on Vercel the CDN serves it).

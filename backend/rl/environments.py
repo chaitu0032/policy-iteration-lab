@@ -163,6 +163,7 @@ def _taxi_layout(env: gym.Env) -> dict[str, Any]:
     walls = [[r, c] for r in range(5) for c in range(4) if desc[r + 1][2 * c + 2] == b"|"]
     return {
         "kind": "taxi", "rows": 5, "cols": 5, "walls": walls,
+        "desc": [row.tobytes().decode() for row in desc],  # 7x11 map, drawn tile-by-tile like gymnasium
         "locs": [list(loc) for loc in env.unwrapped.locs], "loc_names": list(TAXI_LOC_NAMES),
     }
 

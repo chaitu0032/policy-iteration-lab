@@ -3,9 +3,10 @@
 import { formatValue } from "../colors.js";
 import { describeState } from "../taxi.js";
 import { renderChart } from "./chart.js";
+import { SERIES } from "../theme.js";
 import { escapeHtml } from "./tooltip.js";
 
-const Q_COLORS = ["#5ad1e6", "#8b7bff", "#4fd18b", "#ffb547", "#ff6b7a", "#f6c544"];
+const Q_COLORS = SERIES.q;
 
 export function renderInspector(root, run, state, selectedIter, onSelect) {
   if (state == null) {
@@ -29,7 +30,7 @@ export function renderInspector(root, run, state, selectedIter, onSelect) {
     </div>`;
   renderChart(root.querySelector('[data-role="v-chart"]'), {
     series: [
-      { label: "V(s)", color: "#e7ecf7", values: its.map((it) => it.V[state]) },
+      { label: "V(s)", color: SERIES.text, values: its.map((it) => it.V[state]) },
       ...names.map((n, a) => ({ label: `Q(s,${n})`, color: Q_COLORS[a % Q_COLORS.length], values: its.map((it) => it.Q[state][a]), dashed: true })),
     ],
     selected: selectedIter, onSelect, xFormat: (i) => `π${i}`, height: 160,

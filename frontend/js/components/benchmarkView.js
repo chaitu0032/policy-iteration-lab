@@ -4,6 +4,7 @@ import { api } from "../api.js";
 import { formatValue } from "../colors.js";
 import { describeState } from "../taxi.js";
 import { renderChart } from "./chart.js";
+import { SERIES } from "../theme.js";
 import { escapeHtml } from "./tooltip.js";
 
 export function createBenchmarkView(root, store, ui) {
@@ -102,15 +103,15 @@ export function createBenchmarkView(root, store, ui) {
   function drawCharts(c) {
     const xf = (i) => `π${c.rows[i]?.iteration ?? i}`;
     renderChart(root.querySelector('[data-role="c-success"]'), {
-      series: [{ label: "success rate", color: "#4fd18b", type: "bar", values: c.rows.map((r) => r.success_rate) }],
+      series: [{ label: "success rate", color: SERIES.good, type: "bar", values: c.rows.map((r) => r.success_rate) }],
       xFormat: xf, yMin: 0, yMax: 1,
     });
     const hasExpected = c.rows.some((r) => r.expected_value != null);
     renderChart(root.querySelector('[data-role="c-return"]'), {
       series: [
-        { label: "mean return", color: "#5ad1e6", values: c.rows.map((r) => r.mean_return) },
-        { label: "mean discounted G", color: "#8b7bff", values: c.rows.map((r) => r.mean_discounted_return) },
-        ...(hasExpected ? [{ label: "V^π(s₀) (model)", color: "#f6c544", dashed: true, values: c.rows.map((r) => r.expected_value) }] : []),
+        { label: "mean return", color: SERIES.primary, values: c.rows.map((r) => r.mean_return) },
+        { label: "mean discounted G", color: SERIES.secondary, values: c.rows.map((r) => r.mean_discounted_return) },
+        ...(hasExpected ? [{ label: "V^π(s₀) (model)", color: SERIES.star, dashed: true, values: c.rows.map((r) => r.expected_value) }] : []),
       ],
       xFormat: xf,
     });

@@ -78,7 +78,7 @@ export function renderChart(container, opts) {
   }
 
   if (selected != null && selected < n) {
-    el("rect", { x: x(selected) - band / 2, y: m.t, width: band, height: plotH, fill: "rgba(90,209,230,.10)" }, svg);
+    el("rect", { x: x(selected) - band / 2, y: m.t, width: band, height: plotH, class: "sel-band" }, svg);
   }
 
   const bars = series.filter((s) => s.type === "bar");
@@ -90,17 +90,17 @@ export function renderChart(container, opts) {
       const y1 = y(v);
       el("rect", {
         x: x(i) - (band * 0.35) + bi * bw, y: Math.min(y0, y1), width: Math.max(1, bw - 1),
-        height: Math.max(1, Math.abs(y0 - y1)), fill: s.color, rx: 2, opacity: 0.85,
-      }, svg);
+        height: Math.max(1, Math.abs(y0 - y1)), rx: 2, opacity: 0.9,
+      }, svg).style.fill = s.color;
     });
   });
 
   series.filter((s) => s.type !== "bar").forEach((s) => {
     const pts = s.values.map((v, i) => (v == null || !Number.isFinite(v) ? null : [x(i), y(v)]));
     const d = pts.reduce((acc, p, i) => (p ? `${acc}${acc && pts[i - 1] ? "L" : "M"}${p[0].toFixed(1)},${p[1].toFixed(1)}` : acc), "");
-    el("path", { d, fill: "none", stroke: s.color, "stroke-width": 2, "stroke-dasharray": s.dashed ? "5 4" : "none" }, svg);
+    el("path", { d, fill: "none", "stroke-width": 2, "stroke-dasharray": s.dashed ? "5 4" : "none" }, svg).style.stroke = s.color;
     if (n <= 80) {
-      pts.forEach((p) => p && el("circle", { cx: p[0], cy: p[1], r: 2.6, fill: s.color }, svg));
+      pts.forEach((p) => { if (p) el("circle", { cx: p[0], cy: p[1], r: 2.6 }, svg).style.fill = s.color; });
     }
   });
 

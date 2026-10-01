@@ -5,8 +5,7 @@ import { createStore } from "./store.js";
 import { createTrainer } from "./trainer.js";
 import { downloadJson, runsDb, validateImportedRun } from "./runsDb.js";
 import { decodeTaxi } from "./taxi.js";
-import { createRenderer } from "./renderers/board.js";
-import { cellSizeFor } from "./renderers/draw.js";
+import { createWorld, ensureSprites } from "./world/index.js";
 import { createTrainForm } from "./components/trainForm.js";
 import { renderRunList } from "./components/runList.js";
 import { createTrainingView } from "./components/trainingView.js";
@@ -27,7 +26,7 @@ const store = createStore({
   taxiSlice: { passenger: 0, destination: 1 }, galleryArrows: true,
   tableMode: "actions", tableScope: "slice", tableChangedOnly: false,
   inferIter: null, inferStart: 0, inferSeed: 0, inferMaxSteps: 100, inferSpeedMs: 260,
-  inferShowValues: true, inferShowArrows: true,
+  inferShowValues: true, inferShowArrows: true, inferBoard: "both",
   benchParams: { episodes: 50, seed: 0, max_steps: 100, start_state: null }, trainWarnings: [],
 });
 
@@ -153,6 +152,7 @@ function selectEnv(key, clearRun = true) {
   }
   const env = store.get().envs.find((e) => e.key === key);
   if (!env) return;
+  document.body.dataset.env = key; // world accent colour
   store.set({ envKey: key, ...(clearRun ? { run: null } : {}) });
   trainForm.setEnv(env);
   $("#empty-title").textContent = `Train a policy · ${env.title}`;
@@ -169,11 +169,11 @@ function schedulePreview(options) {
   clearTimeout(previewTimer);
   previewTimer = setTimeout(async () => {
     try {
-      const { env, layout } = await api.layout(store.get().envKey, options);
-      const canvas = $("#preview-canvas");
-      const renderer = createRenderer(canvas, { env, layout });
-      renderer.resize(cellSizeFor(layout.cols, layout.rows, 420, 420));
-      renderer.draw({ agent: layout.default_start, slice: null, mode: "play" });
+      const [{ env, layout }] = await Promise.all([api.layout(store.get().envKey, options), ensureSprites()]);
+      const world = createWorld($("#preview-canvas"), { env, layout });
+      world.resize(460, 420);
+      const start = layout.default_start;
+      world.draw({ agent: { from: start, to: start, t: 1 } });
     } catch (err) {
       status(err.message, "error");
     }
