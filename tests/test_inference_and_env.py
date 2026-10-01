@@ -11,7 +11,7 @@ from backend.rl.environments import (
 from backend.rl.inference import benchmark_policies, episode_to_dict, run_episode
 from backend.rl.policy_iteration import PIConfig, policy_iteration
 
-DET_LAKE = {"map_name": "4x4", "is_slippery": False}
+DET_LAKE = {"map_name": "4x4", "is_slippery": False, "reward_hole": 0.0, "reward_frozen": 0.0}
 
 
 def _optimal(key, options, gamma=0.99):

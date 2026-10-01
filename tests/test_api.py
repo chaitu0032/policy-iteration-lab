@@ -3,7 +3,8 @@ from fastapi.testclient import TestClient
 
 from backend.app import app
 
-DET_LAKE = {"env_key": "FrozenLake", "options": {"map_name": "4x4", "is_slippery": False}}
+DET_LAKE = {"env_key": "FrozenLake", "options": {"map_name": "4x4", "is_slippery": False,
+                                                    "reward_hole": 0.0, "reward_frozen": 0.0}}
 
 
 @pytest.fixture(scope="module")

@@ -75,8 +75,11 @@ SPECS: dict[str, EnvSpec] = {
                              "label": "Success rate", "group": "dynamics", "visible_if": {"is_slippery": True},
                              "hint": "P(intended move); the rest is split between the two perpendicular moves."},
             "reward_goal": _reward("Reward: reach goal", 1.0),
-            "reward_hole": _reward("Reward: fall in hole", 0.0),
-            "reward_frozen": _reward("Reward: frozen step", 0.0, "Negative = step penalty (encourages short paths)"),
+            # gymnasium's own default is (1, 0, 0); we penalise holes and every step so the
+            # learned values show both danger and path length.
+            "reward_hole": _reward("Reward: fall in hole", -1.0, "Gymnasium default: 0"),
+            "reward_frozen": _reward("Reward: frozen step", -0.01,
+                                     "Gymnasium default: 0. Negative = step penalty (encourages short paths)"),
         },
         default_max_steps=DEFAULT_MAX_STEPS,
     ),

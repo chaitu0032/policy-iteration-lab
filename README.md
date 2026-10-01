@@ -68,4 +68,4 @@ Or with the CLI: `npm i -g vercel && vercel --prod`.
 
 ### Defaults
 
-FrozenLake opens on the **8×8 map with slippery ice off and γ = 0.99**. Every move is then deterministic and the goal reward is discounted per step, so π★ is the 14-step shortest safe path. Turn slippery ice on (success rate 1/3) to see the optimal policy switch to long, cautious detours.
+FrozenLake opens on the **8×8 map with slippery ice off, γ = 0.99, and rewards goal +1 / hole −1 / frozen step −0.01** (Gymnasium's own default is 1 / 0 / 0). Every move is then deterministic and the goal reward is discounted per step, so π★ is the 14-step shortest safe path. Turn slippery ice on (success rate 1/3) to see the optimal policy switch to long, cautious detours.

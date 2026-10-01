@@ -91,3 +91,10 @@ def test_frozen_lake_default_is_8x8_shortest_path():
     policy = policy_iteration(extract_model(FROZEN_LAKE, {}), PIConfig(gamma=0.99)).optimal.policy
     ep = run_episode(FROZEN_LAKE, {}, policy, start_state=0, seed=0)
     assert ep.success and len(ep.steps) == 14
+
+
+def test_frozen_lake_default_rewards_penalise_holes_and_steps():
+    P = make_env(FROZEN_LAKE, {"map_name": "4x4", "is_slippery": False}).unwrapped.P
+    assert P[14][2][0][2] == 1.0      # step into goal
+    assert P[1][1][0][2] == -1.0      # step into hole (s5)
+    assert P[0][2][0][2] == -0.01     # step onto frozen ice

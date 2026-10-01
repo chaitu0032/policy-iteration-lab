@@ -14,7 +14,7 @@ from backend.rl.policy_iteration import (
 
 @pytest.fixture(scope="module")
 def lake_det():
-    return extract_model(FROZEN_LAKE, {"map_name": "4x4", "is_slippery": False})
+    return extract_model(FROZEN_LAKE, {"map_name": "4x4", "is_slippery": False, "reward_hole": 0.0, "reward_frozen": 0.0})
 
 
 def test_model_is_stochastic_matrix():

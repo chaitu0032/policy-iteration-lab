@@ -20,7 +20,7 @@ const LIVE_FIELDS = [
 ];
 
 // Bump the version whenever defaults change so stale saved values do not override them.
-const STORAGE_KEY = "pi-lab-form-v2";
+const STORAGE_KEY = "pi-lab-form-v3";
 
 function loadSaved() {
   try {
